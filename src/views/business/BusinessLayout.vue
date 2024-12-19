@@ -32,7 +32,6 @@ const activeMenu = computed(() => route.path)
 
 <style scoped lang="scss">
 .business-container {
-  padding: 20px;
 
   .menu-card {
     margin-bottom: 20px;

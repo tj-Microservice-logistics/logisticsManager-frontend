@@ -1,4 +1,13 @@
 <template>
+  <div class="map-container">
+    <div id="map" class="map"></div>
+    <div class="map-buttons">
+      <el-button @click="locateCity('上海')">上海分拣中心</el-button>
+      <el-button @click="locateCity('合肥')">合肥分拣中心</el-button>
+      <el-button @click="locateCity('杭州')">杭州分拣中心</el-button>
+      <el-button @click="locateCity('南京')">南京分拣中心</el-button>
+    </div>
+  </div>
   <div class="waybill-list">
     <el-card class="header-card">
       <div class="card-header">
@@ -159,10 +168,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { Tickets, Search, Document, Location, Warning } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
+import { ElButton } from 'element-plus'
 
 const loading = ref(false)
 const currentPage = ref(1)
@@ -182,7 +192,45 @@ const exceptionForm = ref({
   description: '',
   solution: ''
 })
+import { onMounted } from 'vue';
+let map: BMap.Map | null = null; // 地图实例
 
+// 初始化地图
+const initMap = () => {
+  if (typeof BMap !== "undefined") {
+    map = new BMap.Map("map");
+    map.centerAndZoom(new BMap.Point(121.4737, 31.2304), 10); // 默认显示上海
+    map.enableScrollWheelZoom(true); // 启用滚轮缩放
+  } else {
+    console.error("BMap 未加载，请检查 API 是否正确引入！");
+  }
+};
+
+// 定位城市
+const locateCity = (city: string) => {
+  if (!map) return;
+
+  const cities: Record<string, [number, number]> = {
+    上海: [121.1637, 31.2304],
+    合肥: [117.2830, 31.9206],
+    杭州: [120.3551, 30.2741],
+    南京: [118.7969, 31.9603],
+  };
+
+  const [lng, lat] = cities[city] || [121.1637, 31.2304]; // 默认上海
+  const point = new BMap.Point(lng, lat);
+  map.centerAndZoom(point, 10);
+
+  map.clearOverlays();
+  // 创建一个默认的红色标记
+  const marker = new BMap.Marker(point);  // 默认是红色标记
+  map.addOverlay(marker); // 添加标记到地图
+};
+
+// 确保地图在组件挂载后初始化
+onMounted(() => {
+  initMap();  // 初始化地图
+});
 const exceptionRules: FormRules = {
   type: [{ required: true, message: '请选择异常类型', trigger: 'change' }],
   occurTime: [{ required: true, message: '请选择发生时间', trigger: 'change' }],
@@ -229,13 +277,13 @@ const trackingActivities = ref([
     color: '#67C23A'
   },
   {
-    content: '到达中��站',
+    content: '正在派送',
     timestamp: '2024-03-19 10:30',
     type: 'warning',
     color: '#E6A23C'
   },
   {
-    content: '继续发往目的地',
+    content: '到达目的地',
     timestamp: '2024-03-19 11:00',
     type: 'info',
     color: '#909399'
@@ -309,10 +357,30 @@ const handleExceptionSubmit = async () => {
 </script>
 
 <style scoped lang="scss">
+
+.map-container {
+  position: relative;
+  height: 400px;
+  margin-bottom: 20px;
+}
+
+.map {
+  height: 100%;  /* 确保地图容器占满可用高度 */
+  width: 100%;
+}
+
+.map-buttons {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 999;
+  display: flex;
+  gap: 30px;
+}
 .waybill-list {
+
   .header-card {
     margin-bottom: 20px;
-
     .card-header {
       display: flex;
       justify-content: space-between;
