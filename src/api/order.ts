@@ -1,15 +1,8 @@
 import request from '@/utils/request'
-import type { Order } from '@/types/order'
+import type { Order, OrderQuery } from '@/types/order'
 
 // 获取订单列表
-export function getOrderList(params: {
-  page: number
-  pageSize: number
-  status?: string
-  keyword?: string
-  startDate?: string
-  endDate?: string
-}) {
+export function getOrderList(params: OrderQuery) {
   return request({
     url: '/order/list',
     method: 'get',
@@ -17,33 +10,27 @@ export function getOrderList(params: {
   })
 }
 
-// 获取订单详情
-export function getOrderDetail(id: string) {
-  return request({
-    url: `/order/${id}`,
-    method: 'get'
-  })
-}
-
 // 创建订单
-export function createOrder(data: {
-  customerName: string
-  receiverName: string
-  receiverPhone: string
-  province: string
-  city: string
-  district: string
-  address: string
-  items: Array<{
-    name: string
-    quantity: number
-    price: number
-  }>
-  remark?: string
-}) {
+export function createOrder(data: any) {
   return request({
-    url: '/order',
+    url: '/order/create',
     method: 'post',
     data
   })
-} 
+}
+
+// 更新支付状态
+export function updatePaymentCompleted(orderId: number) {
+  return request({
+    url: `/order/update-payment-completed`,
+    method: 'post',
+    params: { orderId }
+  })
+}
+
+// 统一导出 API 对象
+export const orderAPI = {
+  getOrderList,
+  createOrder,
+  updatePaymentCompleted
+}
