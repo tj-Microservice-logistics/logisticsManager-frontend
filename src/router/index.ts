@@ -88,6 +88,31 @@ const routes: RouteRecordRaw[] = [
             meta: { title: '运单管理' }
           }
         ]
+      },
+      {
+        path: 'reports',
+        name: 'Reports',
+        meta: { title: '报表管理' },
+        children: [
+          {
+            path: 'generate',
+            name: 'Generate',
+            component: () => import('@/views/reports/ReportGenerate.vue'),
+            meta: { title: '报表生成' }
+          },
+          {
+            path: 'analysis',
+            name: 'Analysis',
+            component: () => import('@/views/reports/DataAnalysis.vue'),
+            meta: { title: '数据分析' }
+          },
+          {
+            path: 'history',
+            name: 'History',
+            component: () => import('@/views/reports/ReportHistory.vue'),
+            meta: { title: '历史报表' }
+          }
+        ]
       }
     ]
   }
