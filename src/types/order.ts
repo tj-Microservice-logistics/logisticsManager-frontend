@@ -4,7 +4,6 @@ export type OrderStatus = 'pending' | 'processing' | 'in_transit' | 'completed' 
 // 订单实体
 export interface Order {
   orderId: number
-  goodsId: number
   orderNumber: string
   generationDate: string
   finishDate: string | null
@@ -13,6 +12,15 @@ export interface Order {
   price: number | null
   paymentCompleted: boolean
   deliverStatus: number
+  goods?: {
+    goodsId: number
+    goodsName: string
+    goodsType: string
+    goodsWeight: number
+    goodsLength: number
+    goodsWidth: number
+    goodsHeight: number
+  }
 }
 
 // 订单创建表单
