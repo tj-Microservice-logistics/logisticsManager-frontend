@@ -1,41 +1,28 @@
 <template>
-  <el-breadcrumb separator="/">
-    <el-breadcrumb-item v-for="(item, index) in breadcrumbs" :key="item.path">
-      <span 
-        v-if="index === breadcrumbs.length - 1" 
-        class="no-redirect"
-      >
-        {{ item.meta?.title }}
-      </span>
-      <a v-else @click.prevent="handleLink(item)">
-        {{ item.meta?.title }}
-      </a>
-    </el-breadcrumb-item>
-  </el-breadcrumb>
+  <div class="breadcrumb">
+    {{ currentTitle }}
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { useRoute, useRouter, RouteLocationMatched } from 'vue-router'
+import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const router = useRouter()
+const currentTitle = ref('')
 
-const breadcrumbs = ref<RouteLocationMatched[]>([])
-
-const getBreadcrumb = () => {
-  let matched = route.matched.filter(item => item.meta && item.meta.title)
-  breadcrumbs.value = matched
-}
-
-const handleLink = (item: RouteLocationMatched) => {
-  router.push(item.path)
+const getTitle = () => {
+  const matched = route.matched
+  if (matched.length > 0) {
+    const lastRoute = matched[matched.length - 1]
+    currentTitle.value = lastRoute.meta?.title as string || ''
+  }
 }
 
 watch(
   () => route.path,
   () => {
-    getBreadcrumb()
+    getTitle()
   },
   {
     immediate: true
@@ -44,8 +31,9 @@ watch(
 </script>
 
 <style scoped lang="scss">
-.no-redirect {
-  color: #97a8be;
-  cursor: text;
+.breadcrumb {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
 }
 </style> 

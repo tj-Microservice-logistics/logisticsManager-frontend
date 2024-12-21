@@ -1,17 +1,14 @@
 <template>
   <div class="sidebar">
     <div class="logo">
-      <img src="@/assets/logo.svg" alt="Logo" class="logo-img">
-      <span v-if="!isCollapse">物流管理系统</span>
+      <span>物流管理系统</span>
     </div>
     
     <el-menu
       :default-active="activeMenu"
-      :collapse="isCollapse"
-      background-color="#304156"
-      text-color="#bfcbd9"
-      active-text-color="#409EFF"
-      unique-opened
+      background-color="#fff"
+      text-color="#666"
+      active-text-color="#333"
       router
     >
       <template v-for="route in menuRoutes" :key="route.path">
@@ -55,7 +52,6 @@ import { useStore } from '@/store'
 const route = useRoute()
 const store = useStore()
 
-const isCollapse = computed(() => store.state.app.sidebar.isCollapse)
 const menuRoutes = computed(() => {
   const routes = store.state.permission.routes || []
   return routes.filter(route => !route.meta?.hidden)
@@ -66,31 +62,53 @@ const activeMenu = computed(() => route.path)
 <style scoped lang="scss">
 .sidebar {
   height: 100%;
+  border-right: 1px solid #eee;
+  background-color: #fff;
   
   .logo {
-    height: 50px;
+    height: 60px;
     display: flex;
     align-items: center;
-    padding: 10px;
-    background-color: #2b2f3a;
-    
-    .logo-img {
-      width: 32px;
-      height: 32px;
-      filter: invert(1);
-    }
+    justify-content: center;
+    border-bottom: 1px solid #eee;
     
     span {
-      margin-left: 10px;
-      color: #fff;
+      color: #333;
       font-size: 16px;
       font-weight: 600;
-      white-space: nowrap;
     }
   }
   
   :deep(.el-menu) {
     border-right: none;
+  }
+
+  :deep(.el-sub-menu .el-sub-menu__title) {
+    color: #666;
+    
+    &:hover {
+      background-color: #f6f6f6;
+      color: #333;
+    }
+  }
+
+  :deep(.el-menu-item) {
+    color: #666;
+    
+    &:hover {
+      background-color: #f6f6f6;
+      color: #333;
+    }
+    
+    &.is-active {
+      background-color: #f3f5f9;
+      color: #333;
+      font-weight: 500;
+    }
+  }
+
+  :deep(.el-icon) {
+    color: inherit;
   }
 }
 </style> 
