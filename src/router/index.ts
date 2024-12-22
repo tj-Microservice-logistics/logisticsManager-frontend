@@ -113,6 +113,19 @@ const routes: RouteRecordRaw[] = [
             meta: { title: '历史报表' }
           }
         ]
+      },
+      {
+        path: 'test',
+        name: 'Test',
+        meta: { title: '测试' },
+        children: [
+          {
+            path: 'connection',
+            name: 'Connection',
+            component: () => import('@/views/testConnection.vue'),
+            meta: { title: 'report测试连接' }
+          }
+        ]
       }
     ]
   }

@@ -17,4 +17,14 @@ export default defineConfig({
       },
     },
   },
+  server: {
+    port: 3000,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:9999', // 后端接口地址
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
+    }
+  }
 })
