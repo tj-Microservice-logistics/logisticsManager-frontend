@@ -6,6 +6,7 @@
       <el-button @click="locateCity('合肥')">合肥分拣中心</el-button>
       <el-button @click="locateCity('杭州')">杭州分拣中心</el-button>
       <el-button @click="locateCity('南京')">南京分拣中心</el-button>
+      <el-button @click="locateCity('南昌')">南昌分拣中心</el-button>
     </div>
   </div>
   <div class="waybill-list">
@@ -215,6 +216,7 @@ const locateCity = (city: string) => {
     合肥: [117.2830, 31.9206],
     杭州: [120.3551, 30.2741],
     南京: [118.7969, 31.9603],
+    南昌: [115.8582, 28.7820],
   };
 
   const [lng, lat] = cities[city] || [121.1637, 31.2304]; // 默认上海
