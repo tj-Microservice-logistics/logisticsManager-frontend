@@ -92,14 +92,8 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'reports',
         name: 'Reports',
-        meta: { title: '报表管理' },
+        meta: { title: '报表管理', icon: 'TrendCharts' },
         children: [
-          {
-            path: 'generate',
-            name: 'Generate',
-            component: () => import('@/views/reports/ReportGenerate.vue'),
-            meta: { title: '报表生成' }
-          },
           {
             path: 'analysis',
             name: 'Analysis',

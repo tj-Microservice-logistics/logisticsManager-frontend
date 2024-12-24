@@ -54,7 +54,7 @@ const store = useStore()
 
 const menuRoutes = computed(() => {
   const routes = store.state.permission.routes || []
-  return routes.filter(route => !route.meta?.hidden)
+  return routes.filter((route: any) => !route.meta?.hidden)
 })
 const activeMenu = computed(() => route.path)
 </script>
