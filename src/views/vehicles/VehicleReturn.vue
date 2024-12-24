@@ -36,12 +36,10 @@
 
     <el-card class="content-card">
       <el-table :data="returnList" border v-loading="loading">
-        <el-table-column prop="plateNumber" label="车牌��" width="120" />
+        <el-table-column prop="plateNumber" label="车牌号" width="120" />
         <el-table-column prop="driver" label="司机" width="120" />
         <el-table-column prop="departureTime" label="出车时间" width="180" />
         <el-table-column prop="returnTime" label="回车时间" width="180" />
-        <el-table-column prop="startMileage" label="出车里程" width="120" />
-        <el-table-column prop="endMileage" label="回车里程" width="120" />
         <el-table-column prop="mileageDiff" label="行驶里程" width="120">
           <template #default="{ row }">
             {{ row.endMileage - row.startMileage }} km

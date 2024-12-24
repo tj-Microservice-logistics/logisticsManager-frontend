@@ -10,10 +10,6 @@
           <el-icon><User /></el-icon>
           <span>司机管理</span>
         </el-menu-item>
-        <el-menu-item index="/staff/managers">
-          <el-icon><UserFilled /></el-icon>
-          <span>仓库负责人管理</span>
-        </el-menu-item>
         <el-menu-item index="/staff/schedule">
           <el-icon><Clock /></el-icon>
           <span>排班管理</span>

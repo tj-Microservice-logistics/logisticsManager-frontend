@@ -1,8 +1,14 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import type { RouteRecordRaw } from 'vue-router'
-import Layout from '@/layout/index.vue'
+import { createRouter, createWebHistory } from 'vue-router';
+import type { RouteRecordRaw } from 'vue-router';
+import Layout from '@/layout/index.vue';
 
 const routes: RouteRecordRaw[] = [
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/login/Login.vue'),
+    meta: { title: '登录', hidden: true } // hidden 表示不显示在导航菜单
+  },
   {
     path: '/',
     component: Layout,
@@ -21,12 +27,6 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/vehicles/VehicleLayout.vue'),
         meta: { title: '车辆管理', icon: 'Van' },
         children: [
-          {
-            path: 'types',
-            name: 'VehicleTypes',
-            component: () => import('@/views/vehicles/VehicleTypes.vue'),
-            meta: { title: '车型管理' }
-          },
           {
             path: 'list',
             name: 'VehicleList',
@@ -53,12 +53,6 @@ const routes: RouteRecordRaw[] = [
             name: 'Drivers',
             component: () => import('@/views/staff/Drivers.vue'),
             meta: { title: '司机管理' }
-          },
-          {
-            path: 'managers',
-            name: 'Managers',
-            component: () => import('@/views/staff/Managers.vue'),
-            meta: { title: '仓库负责人' }
           },
           {
             path: 'schedule',
@@ -123,11 +117,22 @@ const routes: RouteRecordRaw[] = [
       }
     ]
   }
-]
+];
 
 const router = createRouter({
   history: createWebHistory(),
   routes
-})
+});
 
-export default router 
+// 全局路由守卫
+router.beforeEach((to, _, next) => {
+  const isAuthenticated = !!localStorage.getItem('token'); // 检查是否已登录
+  if (to.path !== '/login' && !isAuthenticated) {
+    // 如果目标路由不是登录页面且未登录，则跳转到登录页面
+    next('/login');
+  } else {
+    next(); // 放行
+  }
+});
+
+export default router;
