@@ -12,11 +12,33 @@
       <!-- 创建订单对话框 -->
       <el-dialog v-model="dialogVisible" title="创建新订单" width="50%">
         <el-form :model="orderForm" label-width="120px">
-          <el-form-item label="起始地">
-            <el-input v-model="orderForm.originPlace" />
+          <el-form-item label="起始地" required>
+            <el-select 
+              v-model="orderForm.originPlace" 
+              placeholder="请选择起始地"
+              @change="handleOriginPlaceChange"
+            >
+              <el-option
+                v-for="place in warehousePlaces"
+                :key="place.value"
+                :label="place.label"
+                :value="place.value"
+              />
+            </el-select>
           </el-form-item>
-          <el-form-item label="目的地">
-            <el-input v-model="orderForm.destinationPlace" />
+          <el-form-item label="目的地" required>
+            <el-select 
+              v-model="orderForm.destinationPlace" 
+              placeholder="请选择目的地"
+              @change="handleDestinationPlaceChange"
+            >
+              <el-option
+                v-for="place in availableDestinations"
+                :key="place.value"
+                :label="place.label"
+                :value="place.value"
+              />
+            </el-select>
           </el-form-item>
           <el-form-item label="商品名称">
             <el-input v-model="orderForm.goodsName" />
@@ -25,16 +47,40 @@
             <el-input v-model="orderForm.goodsType" />
           </el-form-item>
           <el-form-item label="重量(kg)">
-            <el-input-number v-model="orderForm.goodsWeight" :min="0" />
+            <el-input-number 
+              v-model="orderForm.goodsWeight" 
+              :min="0"
+              :precision="2"
+              :step="0.1"
+              :controls="false"
+            />
           </el-form-item>
           <el-form-item label="长度(cm)">
-            <el-input-number v-model="orderForm.goodsLength" :min="0" />
+            <el-input-number 
+              v-model="orderForm.goodsLength" 
+              :min="0"
+              :precision="2"
+              :step="0.1"
+              :controls="false"
+            />
           </el-form-item>
           <el-form-item label="宽度(cm)">
-            <el-input-number v-model="orderForm.goodsWidth" :min="0" />
+            <el-input-number 
+              v-model="orderForm.goodsWidth" 
+              :min="0"
+              :precision="2"
+              :step="0.1"
+              :controls="false"
+            />
           </el-form-item>
           <el-form-item label="高度(cm)">
-            <el-input-number v-model="orderForm.goodsHeight" :min="0" />
+            <el-input-number 
+              v-model="orderForm.goodsHeight" 
+              :min="0"
+              :precision="2"
+              :step="0.1"
+              :controls="false"
+            />
           </el-form-item>
         </el-form>
         <template #footer>
@@ -137,10 +183,10 @@ const orderForm = ref({
   paymentCompleted: false,
   goodsName: '',
   goodsType: '',
-  goodsWeight: 0,
-  goodsLength: 0,
-  goodsWidth: 0,
-  goodsHeight: 0
+  goodsWeight: undefined,
+  goodsLength: undefined,
+  goodsWidth: undefined,
+  goodsHeight: undefined
 })
 
 const paymentDialogVisible = ref(false)
@@ -148,7 +194,7 @@ const selectedOrders = ref<any[]>([])
 
 // 计算未支付的订单
 const unpaidOrders = computed(() => {
-  return orderList.value.filter(order => !order.paymentCompleted)
+  return (orderList.value || []).filter(order => !order.paymentCompleted)
 })
 
 const getDeliverStatusType = (status: number) => {
@@ -175,8 +221,8 @@ const loadOrders = async () => {
   try {
     loading.value = true
     const response = await orderAPI.getOrderList({})
-    console.log('订单数据:', response.data)
-    orderList.value = response.data
+    console.log('订单数据:', response)
+    orderList.value = Array.isArray(response) ? response : []
   } catch (error) {
     console.error('加载订单列表失败:', error)
     ElMessage.error('加载订单列表失败')
@@ -190,7 +236,7 @@ const createOrder = async () => {
     await orderAPI.createOrder(orderForm.value)
     ElMessage.success('订单创建成功')
     dialogVisible.value = false
-    loadOrders() // 刷新列表
+    await loadOrders() // 刷新列表
   } catch (error) {
     console.error('创建订单失败:', error)
     ElMessage.error('创建订单失败')
@@ -224,7 +270,7 @@ const handlePayment = async () => {
     }
     ElMessage.success('支付成功')
     paymentDialogVisible.value = false
-    loadOrders() // 刷新列表
+    await loadOrders() // 刷新列表
   } catch (error) {
     console.error('支付失败:', error)
     ElMessage.error('支付失败')
@@ -267,6 +313,36 @@ const goodsTypeFilters = computed(() => {
   const types = new Set(orderList.value.map(order => order.goods?.goodsType).filter(Boolean))
   return Array.from(types).map(type => ({ text: type, value: type }))
 })
+
+// 添加仓库地址选项
+const warehousePlaces = [
+  { value: 'Hefei', label: '合肥' },
+  { value: 'Nanjing', label: '南京' },
+  { value: 'Shanghai', label: '上海' },
+  { value: 'Hangzhou', label: '杭州' },
+  { value: 'Nanchang', label: '南昌' }
+]
+
+// 添加可选目的地的响应式引用
+const availableDestinations = ref(warehousePlaces)
+
+// 处理起始地变化
+const handleOriginPlaceChange = (value: string) => {
+  // 重置目的地
+  if (orderForm.value.destinationPlace === value) {
+    orderForm.value.destinationPlace = ''
+  }
+  // 更新可选目的地列表
+  availableDestinations.value = warehousePlaces.filter(place => place.value !== value)
+}
+
+// 处理目的地变化
+const handleDestinationPlaceChange = (value: string) => {
+  if (value === orderForm.value.originPlace) {
+    ElMessage.warning('目的地不能与起始地相同')
+    orderForm.value.destinationPlace = ''
+  }
+}
 
 onMounted(() => {
   loadOrders()
