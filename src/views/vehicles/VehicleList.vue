@@ -1,352 +1,344 @@
 <template>
-  <div class="vehicle-list">
-    <el-card class="header-card">
-      <div class="card-header">
-        <div class="title">
-          <el-icon><Van /></el-icon>
-          <span>车辆列表</span>
-        </div>
-        <el-button type="primary" @click="handleCreate">
-          <el-icon><Plus /></el-icon>新增车辆
-        </el-button>
-      </div>
+  <el-card>
+    <!-- 搜索和新增按钮 -->
+    <div class="card-header">
+      <div class="title">车辆管理</div>
+      <el-input
+        v-model="searchQuery"
+        placeholder="搜索车牌号或车型"
+        clearable
+        class="search-bar"
+        @input="handleSearch"
+      >
+        <template #prefix>
+          <el-icon><Search /></el-icon>
+        </template>
+      </el-input>
+      <el-button type="primary" @click="openAddDialog">
+        <el-icon><Plus /></el-icon>新增车辆
+      </el-button>
+    </div>
 
-      <div class="filter-container">
-        <el-input
-          v-model="searchQuery"
-          placeholder="车牌号/车型"
-          class="filter-item"
-          clearable
-        >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
-      </div>
-    </el-card>
+    <!-- 车辆表格 -->
+    <el-table :data="filteredVehicleList" border v-loading="loading" size="small">
+      <el-table-column prop="licensePlate" label="车牌号" width="150" />
+      <el-table-column prop="vehicleType" label="车型" width="150" />
+      <el-table-column prop="warehouseName" label="所属仓库" width="200" />
+      <el-table-column prop="status" label="状态" width="120">
+        <template #default="{ row }">
+          <el-tag :type="row.status === 'available' ? 'success' : 'danger'">
+            {{ row.status === 'available' ? '可用' : '使用中' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" fixed="right" width="150">
+        <template #default="{ row }">
+          <el-button type="primary" link @click="openEditDialog(row)">编辑</el-button>
+          <el-button type="danger" link @click="confirmDelete(row.vehicleId)">删除</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
 
-    <el-card class="content-card">
-      <el-table :data="vehicleList" border v-loading="loading" size="small">
-        <el-table-column prop="plateNumber" label="车牌号" width="120" />
-        <el-table-column prop="type" label="车型" width="150" />
-        <el-table-column prop="capacity" label="载重(吨)" width="100" />
-        <el-table-column prop="status" label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">
-              {{ getStatusLabel(row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" fixed="right" width="250">
-          <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)">
-              <el-icon><Edit /></el-icon>编辑
-            </el-button>
-            <el-button type="success" link @click="handleMaintenance(row)">
-              <el-icon><Tools /></el-icon>维护记录
-            </el-button>
-            <el-button type="warning" link @click="handleAssign(row)">
-              <el-icon><User /></el-icon>分配司机
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+    <!-- 分页 -->
+    <div class="pagination-container">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :total="total"
+        layout="total, sizes, prev, pager, next"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </div>
 
-      <div class="pagination-container">
-        <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
-      </div>
-    </el-card>
-
-    <!-- 新增/编辑对话框 -->
+    <!-- 新增/编辑车辆模态框 -->
     <el-dialog
-      :title="dialogTitle"
       v-model="dialogVisible"
-      width="600px"
-    >
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="100px"
-      >
-        <el-form-item label="车牌号" prop="plateNumber">
-          <el-input v-model="form.plateNumber" placeholder="请输入车牌号" />
-        </el-form-item>
-        <el-form-item label="车型" prop="type">
-          <el-select v-model="form.type" placeholder="请选择车型" class="w-full">
-            <el-option
-              v-for="item in vehicleTypes"
-              :key="item.code"
-              :label="item.name"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="购置日期" prop="purchaseDate">
-          <el-date-picker
-            v-model="form.purchaseDate"
-            type="date"
-            placeholder="请选择购置日期"
-            class="w-full"
-          />
-        </el-form-item>
-        <el-form-item label="初始里程" prop="initialMileage">
-          <el-input-number
-            v-model="form.initialMileage"
-            :min="0"
-            :precision="0"
-            :step="1000"
-            class="w-full"
-          />
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input
-            v-model="form.remark"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入备注信息"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
-
-    <!-- 维护记录对话框 -->
-    <el-dialog
-      title="维护记录"
-      v-model="maintenanceDialogVisible"
-      width="800px"
-    >
-      <el-table :data="maintenanceRecords" border>
-        <el-table-column prop="date" label="维护日期" width="180" />
-        <el-table-column prop="type" label="维护类型" width="120" />
-        <el-table-column prop="mileage" label="维护里程" width="120" />
-        <el-table-column prop="cost" label="维护费用" width="120" />
-        <el-table-column prop="description" label="维护内容" />
-        <el-table-column prop="maintainer" label="维护人员" width="120" />
-      </el-table>
-    </el-dialog>
-
-    <!-- 分配司机对话框 -->
-    <el-dialog
-      title="分配司机"
-      v-model="assignDialogVisible"
+      :title="dialogTitle"
       width="500px"
+      :before-close="closeDialog"
     >
-      <el-form
-        ref="assignFormRef"
-        :model="assignForm"
-        :rules="assignRules"
-        label-width="100px"
-      >
-        <el-form-item label="选择司机" prop="driverId">
-          <el-select v-model="assignForm.driverId" placeholder="请选择司机" class="w-full">
+      <el-form :model="formData" :rules="rules" ref="vehicleFormRef" label-width="100px">
+        <el-form-item label="车牌号" prop="licensePlate">
+          <el-input v-model="formData.licensePlate" placeholder="请输入车牌号" />
+        </el-form-item>
+        <el-form-item label="车型" prop="vehicleType">
+          <el-select v-model="formData.vehicleType" placeholder="选择车型">
             <el-option
-              v-for="driver in availableDrivers"
-              :key="driver.id"
-              :label="driver.name"
-              :value="driver.id"
+              v-for="type in vehicleTypes"
+              :key="type"
+              :label="type"
+              :value="type"
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="生效日期" prop="startDate">
-          <el-date-picker
-            v-model="assignForm.startDate"
-            type="date"
-            placeholder="请选择生效日期"
-            class="w-full"
-          />
+        <el-form-item label="所属仓库" prop="warehouseId">
+          <el-select v-model="formData.warehouseId" placeholder="选择所属仓库">
+            <el-option
+              v-for="warehouse in warehouseList"
+              :key="warehouse.warehouseId"
+              :label="warehouse.warehouseName"
+              :value="warehouse.warehouseId"
+            />
+          </el-select>
         </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input
-            v-model="assignForm.remark"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入备注信息"
-          />
+        <el-form-item label="状态" prop="status">
+          <el-select v-model="formData.status" placeholder="选择车辆状态">
+            <el-option label="可用" value="available" />
+            <el-option label="使用中" value="in_use" />
+          </el-select>
         </el-form-item>
+        <!-- 如果 assignedTo 是必需的，添加相应的表单项 -->
+        <!-- 
+        <el-form-item label="指派司机" prop="assignedTo">
+          <el-select v-model="formData.assignedTo" placeholder="选择司机">
+            <el-option
+              v-for="driver in driverList"
+              :key="driver.driverId"
+              :label="driver.fullName"
+              :value="driver.driverId"
+            />
+          </el-select>
+        </el-form-item>
+        -->
       </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="assignDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleAssignSubmit">确定</el-button>
-        </span>
-      </template>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="closeDialog">取消</el-button>
+        <el-button type="primary" @click="handleSubmit">保存</el-button>
+      </div>
     </el-dialog>
-  </div>
+  </el-card>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Van, Plus, Edit, Search, Tools, User } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
+import { ref, computed, onMounted } from 'vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { Search, Plus } from '@element-plus/icons-vue';
+import { getVehicles, addVehicle, updateVehicle, deleteVehicle } from '@/api/vehicles';
+import { getWarehouses } from '@/api/warehouses';
+// 如果有司机相关的功能，导入相应的 API 和数据
+// import { getDrivers } from '@/api/drivers';
 
-const loading = ref(false)
-const currentPage = ref(1)
-const pageSize = ref(20)
-const total = ref(0)
-const searchQuery = ref('')
-const statusFilter = ref('')
-const typeFilter = ref('')
-const dialogVisible = ref(false)
-const maintenanceDialogVisible = ref(false)
-const assignDialogVisible = ref(false)
-const isEdit = ref(false)
+// 可选车型
+const vehicleTypes = ref(['truck', 'van', 'forklift', 'drone']); // 添加更多车型时直接扩展数组
 
-const dialogTitle = computed(() => isEdit.value ? '编辑车辆' : '新增车辆')
+// 状态变量
+const vehicleList = ref([]);
+const warehouseList = ref([]); // 仓库列表
+// const driverList = ref([]); // 司机列表，如果需要
+const loading = ref(false);
+const dialogVisible = ref(false);
+const dialogTitle = ref('');
+const formData = ref({
+  licensePlate: '',
+  vehicleType: '',
+  warehouseId: null,
+  status: 'available',
+  // assignedTo: null, // 如果需要指派司机，取消注释
+});
+const rules = {
+  licensePlate: [{ required: true, message: '车牌号不能为空', trigger: 'blur' }],
+  vehicleType: [{ required: true, message: '车型不能为空', trigger: 'blur' }],
+  warehouseId: [{ required: true, message: '请选择所属仓库', trigger: 'change' }],
+  // assignedTo: [{ required: true, message: '请选择指派司机', trigger: 'change' }], // 如果需要
+};
+const currentPage = ref(1);
+const pageSize = ref(10);
+const total = ref(0); // 总数
+const searchQuery = ref('');
 
-// 表单相关
-const formRef = ref<FormInstance>()
-const form = ref({
-  plateNumber: '',
-  type: '',
-  purchaseDate: '',
-  initialMileage: 0,
-  remark: ''
-})
+// 获取车辆列表
+const fetchVehicles = async () => {
+  loading.value = true;
+  try {
+    // 调用接口
+    const response = await getVehicles({ page: currentPage.value, size: pageSize.value });
+    console.log("接口返回数据：", response.data);
 
-const rules: FormRules = {
-  plateNumber: [{ required: true, message: '请输入车牌号', trigger: 'blur' }],
-  type: [{ required: true, message: '请选择车型', trigger: 'change' }],
-  purchaseDate: [{ required: true, message: '请选择购置日期', trigger: 'change' }]
-}
+    const { items, total: totalCount } = response.data || {}; // 重命名 total 为 totalCount
 
-// 分配司机表单
-const assignFormRef = ref<FormInstance>()
-const assignForm = ref({
-  driverId: '',
-  startDate: '',
-  remark: ''
-})
+    if (!Array.isArray(items)) {
+      throw new Error("车辆数据格式异常");
+    }
 
-const assignRules: FormRules = {
-  driverId: [{ required: true, message: '请选择司机', trigger: 'change' }],
-  startDate: [{ required: true, message: '请选择生效日期', trigger: 'change' }]
-}
+    // 更新车辆列表，确保不包含后端不需要的字段
+    vehicleList.value = items.map((vehicle) => ({
+      vehicleId: vehicle.vehicleId, // 确保包含 vehicleId
+      licensePlate: vehicle.licensePlate,
+      vehicleType: vehicle.vehicleType,
+      warehouseId: vehicle.warehouseId,
+      warehouseName: vehicle.warehouseName || "未知仓库",
+      status: vehicle.status,
+      // assignedTo: vehicle.assignedTo, // 如果需要
+    }));
 
-// 模拟数据
-const vehicleTypes = ref([
-  { code: 'VT001', name: '小型厢式货车' },
-  { code: 'VT002', name: '中型厢式货车' }
-])
-
-const vehicleList = ref([
-  {
-    plateNumber: '沪A12345',
-    type: '小型厢式货车',
-    capacity: 2.5,
-    status: 'idle',
-    driver: '张三',
-    lastMaintenance: '2024-02-15',
-    nextMaintenance: '2024-05-15',
-    mileage: 15000
-  },
-  {
-    plateNumber: '沪B67890',
-    type: '中型厢式货车',
-    capacity: 4.5,
-    status: 'in_transit',
-    driver: '李四',
-    lastMaintenance: '2024-01-20',
-    nextMaintenance: '2024-04-20',
-    mileage: 25000
+    // 更新分页总数
+    if (typeof totalCount === "number") {
+      total.value = totalCount; // 正确赋值
+    } else {
+      console.warn("total 字段格式异常，已重置为 0：", totalCount);
+      total.value = 0;
+    }
+  } catch (error) {
+    console.error("获取车辆列表失败：", error);
+    ElMessage.error("获取车辆列表失败，请稍后重试");
+  } finally {
+    loading.value = false;
   }
-])
+};
 
-const maintenanceRecords = ref([
-  {
-    date: '2024-02-15',
-    type: '定期保养',
-    mileage: 15000,
-    cost: 2000,
-    description: '更换机油、机滤、空滤',
-    maintainer: '王师傅'
+// 获取仓库列表
+const fetchWarehouses = async () => {
+  try {
+    const response = await getWarehouses();
+    warehouseList.value = response.data || [];
+  } catch (error) {
+    console.error('获取仓库列表失败：', error);
+    ElMessage.error('获取仓库列表失败，请稍后重试');
   }
-])
+};
 
-const availableDrivers = ref([
-  { id: 1, name: '张三' },
-  { id: 2, name: '李四' },
-  { id: 3, name: '王五' }
-])
+// 如果有司机相关功能，获取司机列表
+// const fetchDrivers = async () => {
+//   try {
+//     const response = await getDrivers();
+//     driverList.value = response.data || [];
+//   } catch (error) {
+//     console.error('获取司机列表失败：', error);
+//     ElMessage.error('获取司机列表失败，请稍后重试');
+//   }
+// };
 
-const getStatusType = (status: string) => {
-  const statusMap: Record<string, string> = {
-    idle: 'success',
-    in_transit: 'warning',
-    maintenance: 'danger'
+// 搜索过滤
+const filteredVehicleList = computed(() => {
+  if (!searchQuery.value) return vehicleList.value;
+  const query = searchQuery.value.toLowerCase();
+  return vehicleList.value.filter(
+    (vehicle) =>
+      vehicle.licensePlate.toLowerCase().includes(query) ||
+      vehicle.vehicleType.toLowerCase().includes(query)
+  );
+});
+
+// 打开新增车辆模态框
+const openAddDialog = () => {
+  dialogTitle.value = '新增车辆';
+  formData.value = {
+    licensePlate: '',
+    vehicleType: '',
+    warehouseId: null,
+    status: 'available',
+    // assignedTo: null, // 如果需要
+  };
+  dialogVisible.value = true;
+};
+
+// 打开编辑模态框
+const openEditDialog = (vehicle) => {
+  dialogTitle.value = '编辑车辆';
+  formData.value = {
+    licensePlate: vehicle.licensePlate,
+    vehicleType: vehicle.vehicleType,
+    warehouseId: vehicle.warehouseId,
+    status: vehicle.status,
+    // assignedTo: vehicle.assignedTo || null, // 如果需要
+  };
+  dialogVisible.value = true;
+};
+
+// 提交表单
+const handleSubmit = async () => {
+  try {
+    if (dialogTitle.value === '新增车辆') {
+      await addVehicle(formData.value);
+      ElMessage.success('新增车辆成功');
+    } else {
+      // 构建更新数据，避免发送 vehicleId 和 warehouseName
+      const updateData = {
+        licensePlate: formData.value.licensePlate,
+        vehicleType: formData.value.vehicleType,
+        warehouseId: formData.value.warehouseId,
+        status: formData.value.status,
+        // assignedTo: formData.value.assignedTo, // 如果需要
+      };
+      await updateVehicle(formData.value.vehicleId, updateData);
+      ElMessage.success('编辑车辆成功');
+    }
+    fetchVehicles();
+    closeDialog();
+  } catch (error) {
+    console.error('保存车辆失败：', error);
+    ElMessage.error('保存车辆失败，请稍后重试');
   }
-  return statusMap[status] || 'info'
-}
+};
 
-const getStatusLabel = (status: string) => {
-  const statusMap: Record<string, string> = {
-    idle: '空闲',
-    in_transit: '在途',
-    maintenance: '维修'
-  }
-  return statusMap[status] || status
-}
+// 删除车辆
+const confirmDelete = (vehicleId) => {
+  ElMessageBox.confirm('确定删除此车辆吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
+    .then(async () => {
+      try {
+        await deleteVehicle(vehicleId);
+        ElMessage.success('删除成功');
+        fetchVehicles();
+      } catch (error) {
+        console.error('删除车辆失败：', error);
+        ElMessage.error('删除车辆失败，请稍后重试');
+      }
+    })
+    .catch(() => {
+      ElMessage.info('已取消删除操作');
+    });
+};
 
-// ... 其他方法实现（handleSizeChange, handleCurrentChange, handleCreate, handleEdit, handleMaintenance, handleAssign等）
+// 关闭模态框
+const closeDialog = () => {
+  dialogVisible.value = false;
+};
+
+// 分页
+const handleSizeChange = (size) => {
+  pageSize.value = size;
+  fetchVehicles();
+};
+const handleCurrentChange = (page) => {
+  currentPage.value = page;
+  fetchVehicles();
+};
+
+// 定义 handleSearch 方法
+const handleSearch = () => {
+  // 重置到第一页
+  currentPage.value = 1;
+  fetchVehicles();
+};
+
+// 加载数据
+onMounted(async () => {
+  await fetchWarehouses();
+  // 如果有司机相关功能，调用 fetchDrivers()
+  // await fetchDrivers();
+  await fetchVehicles();
+});
 </script>
 
-<style scoped lang="scss">
-.vehicle-list {
-  .header-card {
-    margin-bottom: 20px;
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-
-      .title {
-        display: flex;
-        align-items: center;
-        font-size: 16px;
-        font-weight: bold;
-
-        .el-icon {
-          margin-right: 8px;
-        }
-      }
-    }
-
-    .filter-container {
-      display: flex;
-      gap: 12px;
-
-      .filter-item {
-        min-width: 200px;
-      }
-    }
-  }
-
-  .content-card {
-    .pagination-container {
-      margin-top: 20px;
-      display: flex;
-      justify-content: flex-end;
-    }
-  }
-
-  /* 防止横向滚动条 */
-  :deep(.el-table) {
-    overflow-x: auto;
-  }
+<style scoped>
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
 }
-</style> 
+.search-bar {
+  max-width: 300px;
+  margin-right: auto;
+}
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+</style>

@@ -1,249 +1,288 @@
 <template>
-  <div class="drivers">
-    <el-card class="header-card">
-      <div class="card-header">
-        <div class="title">
-          <el-icon><User /></el-icon>
-          <span>司机管理</span>
-        </div>
-        <el-button type="primary" @click="handleCreate">
-          <el-icon><Plus /></el-icon>新增司机
-        </el-button>
-      </div>
-
-      <div class="filter-container">
-        <el-input
-          v-model="searchQuery"
-          placeholder="司机姓名/电话"
-          class="filter-item"
-          clearable
-        >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
-      </div>
-    </el-card>
-
-    <el-card class="content-card">
-      <el-table :data="driverList" border v-loading="loading">
-        <el-table-column prop="name" label="姓名" width="120" />
-        <el-table-column prop="phone" label="电话" width="150" />
-        <el-table-column prop="license" label="驾驶证号" width="180" />
-        <el-table-column prop="status" label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">
-              {{ getStatusLabel(row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" fixed="right" width="200">
-          <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)">
-              <el-icon><Edit /></el-icon>编辑
-            </el-button>
-            <el-button type="danger" link @click="handleDelete(row)">
-              <el-icon><Delete /></el-icon>删除
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <div class="pagination-container">
-        <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
-      </div>
-    </el-card>
-
-    <!-- 新增/编辑对话框 -->
-    <el-dialog
-      :title="dialogTitle"
-      v-model="dialogVisible"
-      width="500px"
-    >
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="100px"
+  <el-card>
+    <!-- 搜索和新增按钮 -->
+    <div class="card-header">
+      <div class="title">司机列表</div>
+      <el-input
+        v-model="searchQuery"
+        placeholder="搜索姓名或电话"
+        class="search-bar"
+        clearable
+        @input="handleSearch"
       >
-        <el-form-item label="姓名" prop="name">
-          <el-input v-model="form.name" placeholder="请输入姓名" />
-        </el-form-item>
-        <el-form-item label="电话" prop="phone">
-          <el-input v-model="form.phone" placeholder="请输入电话" />
-        </el-form-item>
-        <el-form-item label="驾驶证号" prop="license">
-          <el-input v-model="form.license" placeholder="请输入驾驶证号" />
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-select v-model="form.status" placeholder="请选择状态">
-            <el-option label="在职" value="active" />
-            <el-option label="离职" value="inactive" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
+        <template #prefix>
+          <el-icon><Search /></el-icon>
+        </template>
+      </el-input>
+      <el-button type="primary" @click="openAddDialog">
+        <el-icon><Plus /></el-icon>新增司机
+      </el-button>
+    </div>
+
+    <!-- 司机表格 -->
+    <el-table :data="filteredDriverList" border v-loading="loading" size="small">
+  <el-table-column prop="fullName" label="姓名" width="150" />
+  <el-table-column prop="contactNumber" label="电话" width="200" />
+  <el-table-column prop="warehouseName" label="所属仓库" width="200" />
+  <el-table-column prop="assignedVehicle" label="车牌号" width="150">
+    <template #default="{ row }">
+      <span v-if="row.assignedVehicle">{{ row.assignedVehicle }}</span>
+      <span v-else>未分配</span>
+    </template>
+  </el-table-column>
+  <el-table-column prop="isAvailable" label="状态" width="120">
+    <template #default="{ row }">
+      <el-tag :type="row.isAvailable ? 'success' : 'danger'">
+        {{ row.isAvailable ? '空闲' : '忙碌' }}
+      </el-tag>
+    </template>
+  </el-table-column>
+  <el-table-column label="操作" fixed="right" width="150">
+    <template #default="{ row }">
+      <el-button type="primary" link @click="openEditDialog(row)">编辑</el-button>
+      <el-button type="danger" link @click="confirmDelete(row.driverId)">删除</el-button>
+    </template>
+  </el-table-column>
+</el-table>
+
+
+    <!-- 分页 -->
+    <div class="pagination-container">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :total="total"
+        layout="total, sizes, prev, pager, next"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </div>
+
+    <!-- 新增/编辑司机模态框 -->
+    <el-dialog
+      v-model="dialogVisible"
+      :title="dialogTitle"
+      width="500px"
+      :before-close="closeDialog"
+    >
+    <el-form :model="formData" :rules="rules" ref="driverFormRef" label-width="100px">
+    <el-form-item label="姓名" prop="fullName">
+      <el-input v-model="formData.fullName" placeholder="请输入司机姓名" />
+    </el-form-item>
+    <el-form-item label="电话" prop="contactNumber">
+      <el-input v-model="formData.contactNumber" placeholder="请输入联系电话" />
+    </el-form-item>
+    <el-form-item label="所属仓库" prop="warehouseId">
+      <el-select v-model="formData.warehouseId" placeholder="选择所属仓库">
+        <el-option
+          v-for="warehouse in warehouseList"
+          :key="warehouse.warehouseId"
+          :label="warehouse.warehouseName"
+          :value="warehouse.warehouseId"
+        />
+      </el-select>
+    </el-form-item>
+    <el-form-item label="状态" prop="isAvailable">
+      <el-switch v-model="formData.isAvailable" active-text="空闲" inactive-text="忙碌" />
+    </el-form-item>
+  </el-form>
+  <div slot="footer" class="dialog-footer">
+    <el-button @click="closeDialog">取消</el-button>
+    <el-button type="primary" @click="handleSubmit">保存</el-button>
   </div>
+</el-dialog>
+  </el-card>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { User, Plus, Edit, Delete, Search } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, computed, onMounted } from 'vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { Search, Plus } from '@element-plus/icons-vue';
+import { getDrivers, addDriver, updateDriver, deleteDriver } from '@/api/drivers';
+import { getVehicles } from '@/api/vehicles';
+import { getWarehouses } from '@/api/warehouses';
 
-const loading = ref(false)
-const currentPage = ref(1)
-const pageSize = ref(20)
-const total = ref(0)
-const searchQuery = ref('')
-const dialogVisible = ref(false)
-const isEdit = ref(false)
+// 状态变量
+const driverList = ref([]);
+const vehicleList = ref([]);
+const warehouseList = ref([]);
+const loading = ref(false);
+const dialogVisible = ref(false);
+const dialogTitle = ref('');
+const formData = ref({
+  fullName: '',
+  contactNumber: '',
+  assignedVehicle: null,
+  warehouseId: null,
+  isAvailable: true,
+});
+const rules = {
+  fullName: [{ required: true, message: '姓名不能为空', trigger: 'blur' }],
+  contactNumber: [{ required: true, message: '电话不能为空', trigger: 'blur' }],
+  warehouseId: [{ required: true, message: '请选择所属仓库', trigger: 'change' }],
+};
+const currentPage = ref(1);
+const pageSize = ref(10);
+const total = ref(0);
+const searchQuery = ref('');
+const driverFormRef = ref(null);
 
-const dialogTitle = computed(() => isEdit.value ? '编辑司机' : '新增司机')
+// 获取司机、车辆、仓库列表
+const fetchDrivers = async () => {
+  loading.value = true;
 
-// 表单相关
-const formRef = ref<FormInstance>()
-const form = ref({
-  name: '',
-  phone: '',
-  license: '',
-  status: 'active'
-})
+  try {
+    // 获取司机数据
+    const driverResponse = await getDrivers({
+      page: currentPage.value,
+      size: pageSize.value,
+    });
+    const driverItems = driverResponse.data || [];
+    total.value = driverItems.length;
 
-const rules: FormRules = {
-  name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
-  phone: [{ required: true, message: '请输入电话', trigger: 'blur' }],
-  license: [{ required: true, message: '请输入驾驶证号', trigger: 'blur' }],
-  status: [{ required: true, message: '请选择状态', trigger: 'change' }]
-}
+    // 获取车辆数据
+    const vehicleResponse = await getVehicles();
+    const vehicleItems = vehicleResponse.data?.items || [];
+    vehicleList.value = vehicleItems;
 
-// 模拟数据
-const driverList = ref([
-  { name: '张三', phone: '13800138000', license: '沪A123456', status: 'active' },
-  { name: '李四', phone: '13900139000', license: '沪B654321', status: 'inactive' }
-])
+    // 获取仓库数据
+    const warehouseResponse = await getWarehouses();
+    warehouseList.value = warehouseResponse.data || [];
 
-const getStatusType = (status: string) => {
-  return status === 'active' ? 'success' : 'danger'
-}
-
-const getStatusLabel = (status: string) => {
-  return status === 'active' ? '在职' : '离职'
-}
-
-// 事件处理
-const handleSizeChange = (val: number) => {
-  pageSize.value = val
-  // 重新加载数据
-}
-
-const handleCurrentChange = (val: number) => {
-  currentPage.value = val
-  // 重新加载数据
-}
-
-const handleCreate = () => {
-  isEdit.value = false
-  form.value = {
-    name: '',
-    phone: '',
-    license: '',
-    status: 'active'
+    // 合并数据
+    driverList.value = driverItems.map((driver) => {
+      const vehicle = vehicleList.value.find((v) => v.vehicleId === driver.assignedVehicle);
+      const warehouse = warehouseList.value.find((w) => w.warehouseId === driver.warehouseId);
+      return {
+        ...driver,
+        assignedVehicle: vehicle ? vehicle.licensePlate : '未分配',
+        warehouseName: warehouse ? warehouse.warehouseName : '未知仓库',
+      };
+    });
+  } catch (error) {
+    console.error('获取数据失败：', error);
+    ElMessage.error('获取数据失败，请稍后重试');
+  } finally {
+    loading.value = false;
   }
-  dialogVisible.value = true
-}
+};
 
-const handleEdit = (row: any) => {
-  isEdit.value = true
-  form.value = { ...row }
-  dialogVisible.value = true
-}
+// 搜索过滤
+const filteredDriverList = computed(() => {
+  if (!searchQuery.value) return driverList.value;
+  return driverList.value.filter(
+    (driver) =>
+      driver.fullName.includes(searchQuery.value) ||
+      driver.contactNumber.includes(searchQuery.value)
+  );
+});
 
-const handleDelete = (row: any) => {
-  ElMessageBox.confirm(
-    `确认删除司机 ${row.name} 吗？`,
-    '警告',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(() => {
-    // 执行删除操作
-    ElMessage.success('删除成功')
-  })
-}
+// 打开新增模态框
+const openAddDialog = () => {
+  dialogTitle.value = '新增司机';
+  Object.assign(formData.value, {
+    fullName: '',
+    contactNumber: '',
+    assignedVehicle: null,
+    warehouseId: null,
+    isAvailable: true,
+  });
+  dialogVisible.value = true;
+};
 
+// 打开编辑模态框
+const openEditDialog = (driver) => {
+  dialogTitle.value = '编辑司机';
+  Object.assign(formData.value, { ...driver });
+  dialogVisible.value = true;
+};
+
+// 提交表单
 const handleSubmit = async () => {
-  if (!formRef.value) return
-  
-  await formRef.value.validate((valid) => {
-    if (valid) {
-      // 提交表单
-      ElMessage.success(isEdit.value ? '编辑成功' : '新增成功')
-      dialogVisible.value = false
+  driverFormRef.value.validate(async (valid) => {
+    if (!valid) return;
+
+    try {
+      if (dialogTitle.value === '新增司机') {
+        await addDriver(formData.value);
+        ElMessage.success('新增司机成功');
+      } else {
+        await updateDriver(formData.value.driverId, formData.value);
+        ElMessage.success('编辑司机成功');
+      }
+      fetchDrivers();
+      closeDialog();
+    } catch (error) {
+      console.error('保存司机失败：', error);
+      ElMessage.error('保存司机失败，请稍后重试');
     }
+  });
+};
+
+// 删除司机
+const confirmDelete = (driverId) => {
+  ElMessageBox.confirm('确定删除此司机吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
   })
-}
+    .then(async () => {
+      try {
+        await deleteDriver(driverId);
+        ElMessage.success('删除成功');
+        fetchDrivers();
+      } catch (error) {
+        console.error('删除司机失败：', error);
+        ElMessage.error('删除司机失败，请稍后重试');
+      }
+    })
+    .catch(() => {
+      ElMessage.info('已取消删除操作');
+    });
+};
+
+// 关闭模态框
+const closeDialog = () => {
+  dialogVisible.value = false;
+  if (driverFormRef.value) {
+    driverFormRef.value.resetFields();
+  }
+};
+
+// 搜索
+const handleSearch = () => {
+  currentPage.value = 1;
+  fetchDrivers();
+};
+
+// 分页
+const handleSizeChange = (size) => {
+  pageSize.value = size;
+  fetchDrivers();
+};
+const handleCurrentChange = (page) => {
+  currentPage.value = page;
+  fetchDrivers();
+};
+
+// 加载数据
+onMounted(fetchDrivers);
 </script>
 
-<style scoped lang="scss">
-.drivers {
-  .header-card {
-    margin-bottom: 20px;
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-
-      .title {
-        display: flex;
-        align-items: center;
-        font-size: 18px;
-        font-weight: bold;
-
-        .el-icon {
-          margin-right: 8px;
-        }
-      }
-    }
-
-    .filter-container {
-      display: flex;
-      gap: 12px;
-
-      .filter-item {
-        min-width: 200px;
-      }
-    }
-  }
-
-  .content-card {
-    .pagination-container {
-      margin-top: 20px;
-      display: flex;
-      justify-content: flex-end;
-    }
-  }
-
-  :deep(.w-full) {
-    width: 100%;
-  }
+<style scoped>
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
 }
-</style> 
+.search-bar {
+  margin-right: auto;
+  max-width: 300px;
+}
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+</style>
