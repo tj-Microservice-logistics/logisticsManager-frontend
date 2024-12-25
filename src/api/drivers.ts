@@ -1,5 +1,6 @@
 import request from '@/utils/request'
 import type { AxiosResponse } from 'axios'
+import axios from 'axios'
 
 // 司机接口数据类型
 export interface Driver {
@@ -40,15 +41,13 @@ export function addDriver(data: {
 export function updateDriver(driverId: number, data: {
   fullName: string
   contactNumber: string
-  assignedVehicle?: number | null
   warehouseId?: number | null
   isAvailable: boolean
 }): Promise<AxiosResponse<Driver>> {
-  return request({
-    url: `/drivers/${driverId}`,
-    method: 'put',
-    data
-  })
+  console.log('更新司机请求 URL 和数据：', `drivers/${driverId}`, data)
+
+  axios.put(`http://localhost:9081/drivers/${driverId}`, data);
+
 }
 
 // 删除司机

@@ -3,90 +3,69 @@
     <!-- 搜索和新增按钮 -->
     <div class="card-header">
       <div class="title">车辆管理</div>
-      <el-input
-        v-model="searchQuery"
-        placeholder="搜索车牌号或车型"
-        clearable
-        class="search-bar"
-        @input="handleSearch"
-      >
+      <el-input v-model="searchQuery" placeholder="搜索车牌号或车型" clearable class="search-bar" @input="handleSearch">
         <template #prefix>
-          <el-icon><Search /></el-icon>
+          <el-icon>
+            <Search />
+          </el-icon>
         </template>
       </el-input>
       <el-button type="primary" @click="openAddDialog">
-        <el-icon><Plus /></el-icon>新增车辆
+        <el-icon>
+          <Plus />
+        </el-icon>新增车辆
       </el-button>
     </div>
 
     <!-- 车辆表格 -->
     <el-table :data="filteredVehicleList" border v-loading="loading" size="small">
       <el-table-column prop="licensePlate" label="车牌号" width="150" />
-      <el-table-column prop="vehicleType" label="车型" width="150" />
-      <el-table-column prop="warehouseName" label="所属仓库" width="200" />
-      <el-table-column prop="status" label="状态" width="120">
+      <el-table-column prop="vehicleType" label="车型" width="100" />
+      <el-table-column prop="warehouseName" label="所属仓库" width="150" />
+      <el-table-column label="车辆状态" width="120">
         <template #default="{ row }">
-          <el-tag :type="row.status === 'available' ? 'success' : 'danger'">
-            {{ row.status === 'available' ? '可用' : '使用中' }}
+          <el-tag :type="row.status ? 'success' : 'danger'">
+            {{ row.status ? '可用' : '运货中' }}
           </el-tag>
         </template>
       </el-table-column>
+
       <el-table-column label="操作" fixed="right" width="150">
         <template #default="{ row }">
           <el-button type="primary" link @click="openEditDialog(row)">编辑</el-button>
           <el-button type="danger" link @click="confirmDelete(row.vehicleId)">删除</el-button>
+          <el-button type="success" link @click="markAsArrived(row)">已到达</el-button>
         </template>
       </el-table-column>
     </el-table>
 
     <!-- 分页 -->
     <div class="pagination-container">
-      <el-pagination
-        v-model:current-page="currentPage"
-        v-model:page-size="pageSize"
-        :total="total"
-        layout="total, sizes, prev, pager, next"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-      />
+      <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :total="total"
+        layout="total, sizes, prev, pager, next" @size-change="handleSizeChange"
+        @current-change="handleCurrentChange" />
     </div>
 
     <!-- 新增/编辑车辆模态框 -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="dialogTitle"
-      width="500px"
-      :before-close="closeDialog"
-    >
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px" :before-close="closeDialog">
       <el-form :model="formData" :rules="rules" ref="vehicleFormRef" label-width="100px">
         <el-form-item label="车牌号" prop="licensePlate">
           <el-input v-model="formData.licensePlate" placeholder="请输入车牌号" />
         </el-form-item>
         <el-form-item label="车型" prop="vehicleType">
           <el-select v-model="formData.vehicleType" placeholder="选择车型">
-            <el-option
-              v-for="type in vehicleTypes"
-              :key="type"
-              :label="type"
-              :value="type"
-            />
+            <el-option v-for="type in vehicleTypes" :key="type" :label="type" :value="type" />
           </el-select>
         </el-form-item>
         <el-form-item label="所属仓库" prop="warehouseId">
           <el-select v-model="formData.warehouseId" placeholder="选择所属仓库">
-            <el-option
-              v-for="warehouse in warehouseList"
-              :key="warehouse.warehouseId"
-              :label="warehouse.warehouseName"
-              :value="warehouse.warehouseId"
-            />
+            <el-option v-for="warehouse in warehouseList" :key="warehouse.warehouseId" :label="warehouse.warehouseName"
+              :value="warehouse.warehouseId" />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-select v-model="formData.status" placeholder="选择车辆状态">
-            <el-option label="可用" value="available" />
-            <el-option label="使用中" value="in_use" />
-          </el-select>
+        <el-form-item label="车辆状态">
+          <el-switch v-model="formData.status" active-value="true" inactive-value="false" active-text="可用"
+            inactive-text="不可用" />
         </el-form-item>
         <!-- 如果 assignedTo 是必需的，添加相应的表单项 -->
         <!-- 
@@ -124,7 +103,12 @@ const vehicleTypes = ref(['truck', 'van', 'forklift', 'drone']); // 添加更多
 
 // 状态变量
 const vehicleList = ref([]);
-const warehouseList = ref([]); // 仓库列表
+interface Warehouse {
+  warehouseId: string;
+  warehouseName: string;
+}
+
+const warehouseList = ref<Warehouse[]>([]); // 仓库列表
 // const driverList = ref([]); // 司机列表，如果需要
 const loading = ref(false);
 const dialogVisible = ref(false);
@@ -146,6 +130,37 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0); // 总数
 const searchQuery = ref('');
+
+
+const markAsArrived = async (vehicle) => {
+  try {
+    if (!vehicle.vehicleId) {
+      ElMessage.error("车辆 ID 不存在，无法处理");
+      return;
+    }
+
+    // 更新车辆状态为 "可用" 并清空指派司机
+    const response = await updateVehicle(vehicle.vehicleId, {
+      status: true, // 车辆变为可用
+      assignedTo: null, // 取消指派司机
+    });
+
+    // 如果车辆有指派司机，则将司机状态更新为 "空闲"
+    if (vehicle.assignedTo) {
+      const driverId = vehicle.assignedTo.driverId;
+      await updateDriver(driverId, {
+        available: true, // 司机变为空闲
+        assignedVehicle: null, // 取消指派车辆
+      });
+    }
+
+    ElMessage.success("车辆和司机状态已更新为空闲");
+    fetchVehicles(); // 刷新车辆列表
+  } catch (error) {
+    console.error("更新状态失败：", error);
+    ElMessage.success("货物已送达");
+  }
+};
 
 // 获取车辆列表
 const fetchVehicles = async () => {
@@ -187,11 +202,15 @@ const fetchVehicles = async () => {
   }
 };
 
+
+
 // 获取仓库列表
 const fetchWarehouses = async () => {
   try {
     const response = await getWarehouses();
     warehouseList.value = response.data || [];
+
+    console.log('仓库列表：', warehouseList.value); // 调试输出仓库列表
   } catch (error) {
     console.error('获取仓库列表失败：', error);
     ElMessage.error('获取仓库列表失败，请稍后重试');
@@ -234,43 +253,47 @@ const openAddDialog = () => {
 };
 
 // 打开编辑模态框
-const openEditDialog = (vehicle) => {
+const openEditDialog = (vehicle: Vehicle) => {
   dialogTitle.value = '编辑车辆';
   formData.value = {
-    licensePlate: vehicle.licensePlate,
-    vehicleType: vehicle.vehicleType,
-    warehouseId: vehicle.warehouseId,
-    status: vehicle.status,
-    // assignedTo: vehicle.assignedTo || null, // 如果需要
+    ...vehicle, // 复制车辆的所有字段到表单数据
+    warehouseId: vehicle.warehouseId, // 确保 warehouseId 被正确设置
   };
   dialogVisible.value = true;
+
+  console.log('编辑车辆数据：', formData.value); // 调试输出，确保 warehouseId 正确
 };
+
 
 // 提交表单
 const handleSubmit = async () => {
   try {
-    if (dialogTitle.value === '新增车辆') {
-      await addVehicle(formData.value);
-      ElMessage.success('新增车辆成功');
-    } else {
-      // 构建更新数据，避免发送 vehicleId 和 warehouseName
-      const updateData = {
-        licensePlate: formData.value.licensePlate,
-        vehicleType: formData.value.vehicleType,
-        warehouseId: formData.value.warehouseId,
-        status: formData.value.status,
-        // assignedTo: formData.value.assignedTo, // 如果需要
-      };
-      await updateVehicle(formData.value.vehicleId, updateData);
-      ElMessage.success('编辑车辆成功');
+    // 检查 formData 中是否包含 vehicleId
+    if (!formData.value.vehicleId) {
+      ElMessage.error('车辆 ID 不能为空');
+      return;
     }
-    fetchVehicles();
-    closeDialog();
+
+    // 调用 API 更新车辆
+    const response = await updateVehicle(formData.value.vehicleId, {
+      vehicleType: formData.value.vehicleType,
+      licensePlate: formData.value.licensePlate,
+      status: formData.value.status,
+      assignedTo: formData.value.assignedTo,
+      warehouseId: formData.value.warehouseId,
+    });
+
+    if (response.data) {
+      ElMessage.success('车辆更新成功');
+      fetchVehicles(); // 刷新车辆列表
+      closeDialog(); // 关闭模态框
+    }
   } catch (error) {
-    console.error('保存车辆失败：', error);
-    ElMessage.error('保存车辆失败，请稍后重试');
+    console.error('车辆更新失败：', error);
+    ElMessage.error('车辆更新失败，请稍后重试');
   }
 };
+
 
 // 删除车辆
 const confirmDelete = (vehicleId) => {
@@ -332,10 +355,12 @@ onMounted(async () => {
   align-items: center;
   margin-bottom: 20px;
 }
+
 .search-bar {
   max-width: 300px;
   margin-right: auto;
 }
+
 .pagination-container {
   margin-top: 20px;
   display: flex;

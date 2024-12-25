@@ -25,7 +25,7 @@ export interface Vehicle {
  */
 export function getVehicles(params: { page: number; size: number }) {
   return request({
-    url: '/vehicles', 
+    url: '/vehicles',
     method: 'get',
     params,
   });
@@ -57,12 +57,14 @@ export function updateVehicle(
   vehicleId: number,
   data: Partial<Omit<Vehicle, 'vehicleId'>>
 ): Promise<AxiosResponse<Vehicle>> {
+  console.log('更新车辆请求 URL 和数据：', `/vehicles/${vehicleId}`, data); // 调试输出
   return request({
     url: `/vehicles/${vehicleId}`,
     method: 'put',
     data,
   });
 }
+
 
 // 删除车辆
 /**
