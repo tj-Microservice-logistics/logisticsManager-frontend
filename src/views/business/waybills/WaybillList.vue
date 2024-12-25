@@ -347,7 +347,7 @@ const handleException = (row: any) => {
 
 const handleExceptionSubmit = async () => {
   if (!exceptionFormRef.value) return
-  
+
   await exceptionFormRef.value.validate((valid) => {
     if (valid) {
       // 提交异常登记
@@ -423,4 +423,4 @@ const handleExceptionSubmit = async () => {
     width: 100%;
   }
 }
-</style> 
+</style>

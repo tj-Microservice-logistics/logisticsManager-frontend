@@ -194,7 +194,7 @@ const selectedOrders = ref<any[]>([])
 
 // 计算未支付的订单
 const unpaidOrders = computed(() => {
-  return orderList.value.filter(order => !order.paymentCompleted)
+  return (orderList.value || []).filter(order => !order.paymentCompleted)
 })
 
 const getDeliverStatusType = (status: number) => {
@@ -221,8 +221,8 @@ const loadOrders = async () => {
   try {
     loading.value = true
     const response = await orderAPI.getOrderList({})
-    console.log('订单数据:', response.data)
-    orderList.value = response.data
+    console.log('订单数据:', response)
+    orderList.value = Array.isArray(response) ? response : []
   } catch (error) {
     console.error('加载订单列表失败:', error)
     ElMessage.error('加载订单列表失败')
@@ -236,7 +236,7 @@ const createOrder = async () => {
     await orderAPI.createOrder(orderForm.value)
     ElMessage.success('订单创建成功')
     dialogVisible.value = false
-    loadOrders() // 刷新列表
+    await loadOrders() // 刷新列表
   } catch (error) {
     console.error('创建订单失败:', error)
     ElMessage.error('创建订单失败')
@@ -270,7 +270,7 @@ const handlePayment = async () => {
     }
     ElMessage.success('支付成功')
     paymentDialogVisible.value = false
-    loadOrders() // 刷新列表
+    await loadOrders() // 刷新列表
   } catch (error) {
     console.error('支付失败:', error)
     ElMessage.error('支付失败')

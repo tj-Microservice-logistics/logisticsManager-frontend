@@ -124,15 +124,10 @@ const router = createRouter({
   routes
 });
 
-// 全局路由守卫
-router.beforeEach((to, _, next) => {
-  const isAuthenticated = !!localStorage.getItem('token'); // 检查是否已登录
-  if (to.path !== '/login' && !isAuthenticated) {
-    // 如果目标路由不是登录页面且未登录，则跳转到登录页面
-    next('/login');
-  } else {
-    next(); // 放行
-  }
+router.beforeEach((_, __, next) => {
+  // 全局路由守卫，不使用 to 和 from
+  next();
 });
 
 export default router;
+

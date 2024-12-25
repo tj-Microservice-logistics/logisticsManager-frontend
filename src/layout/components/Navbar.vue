@@ -21,6 +21,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { ArrowDown } from '@element-plus/icons-vue'
 import Breadcrumb from './Breadcrumb.vue'
 import { useStore } from '@/store'
