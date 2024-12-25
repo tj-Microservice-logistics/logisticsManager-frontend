@@ -34,8 +34,6 @@
           <el-option label="待发车" value="pending" />
           <el-option label="运输中" value="in_transit" />
           <el-option label="已送达" value="delivered" />
-          <el-option label="已完成" value="completed" />
-          <el-option label="异常" value="exception" />
         </el-select>
 
         <el-date-picker
@@ -58,7 +56,7 @@
         <el-table-column prop="fromAddress" label="发货地" width="200" />
         <el-table-column prop="toAddress" label="收货地" width="200" />
         <el-table-column prop="departureTime" label="发车时间" width="180" />
-        <el-table-column prop="estimatedArrivalTime" label="预计到达" width="180" />
+        <el-table-column prop="arrivalTime" label="到达时间" width="180" />
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)">
@@ -246,10 +244,10 @@ const waybillList = ref([
     orderNo: 'DD202403180001',
     plateNumber: '沪A12345',
     driver: '张师傅',
-    fromAddress: '上海市浦东新区XX路XX号',
-    toAddress: '北京市朝阳区XX路XX号',
+    fromAddress: '上海分拣中心',
+    toAddress: '南京分拣中心',
     departureTime: '2024-03-18 09:00',
-    estimatedArrivalTime: '2024-03-20 14:00',
+    arrivalTime: '未到达',
     status: 'in_transit'
   },
   {
@@ -257,10 +255,10 @@ const waybillList = ref([
     orderNo: 'DD202403180002',
     plateNumber: '沪B67890',
     driver: '李师傅',
-    fromAddress: '广州市天河区XX路XX号',
-    toAddress: '深圳市南山区XX路XX号',
-    departureTime: '2024-03-18 08:30',
-    estimatedArrivalTime: '2024-03-19 16:00',
+    fromAddress: '南京分拣中心',
+    toAddress: '杭州分拣中心',
+    departureTime: '未发车',
+    arrivalTime: '未到达',
     status: 'pending'
   }
 ])
@@ -298,8 +296,6 @@ const getStatusType = (status: string) => {
     pending: 'warning',
     in_transit: 'primary',
     delivered: 'success',
-    completed: 'info',
-    exception: 'danger'
   }
   return statusMap[status] || 'info'
 }
@@ -309,8 +305,6 @@ const getStatusLabel = (status: string) => {
     pending: '待发车',
     in_transit: '运输中',
     delivered: '已送达',
-    completed: '已完成',
-    exception: '异常'
   }
   return statusMap[status] || status
 }
