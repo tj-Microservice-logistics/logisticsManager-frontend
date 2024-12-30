@@ -15,7 +15,7 @@ export interface Driver {
 // 获取司机列表
 export function getDrivers(params: { page: number; size: number }) {
   return request({
-    url: '/drivers',
+    url: 'http://100.76.102.33:9081/drivers',
     method: 'get',
     params,
   });

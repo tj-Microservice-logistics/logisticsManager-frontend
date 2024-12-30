@@ -16,11 +16,9 @@
           <el-icon><Tickets /></el-icon>
           <span>运单管理</span>
         </div>
-        <el-button type="primary" @click="fetchWaybills">查询</el-button>
       </div>
 
       <div class="filter-container">
-        <el-table :data="filteredWaybills" border>
         <el-input
             v-model="searchQuery"
             placeholder="运单号/订单号"
@@ -33,9 +31,9 @@
         </el-input>
 
         <el-select v-model="statusFilter" placeholder="运单状态" clearable class="filter-item">
-          <el-option label="待发车" value="pending" />
-          <el-option label="运输中" value="in_transit" />
-          <el-option label="已送达" value="delivered" />
+          <el-option label="待发车" value="待发车" />
+          <el-option label="运输中" value="运输中" />
+          <el-option label="已送达" value="已送达" />
         </el-select>
 
         <el-input
@@ -53,26 +51,26 @@
         ></el-input>
 
         <el-select v-model="startWarehouseFilter" placeholder="起点仓库" clearable class="filter-item">
-          <el-option label="上海分拣中心" value="上海分拣中心" />
-          <el-option label="合肥分拣中心" value="合肥分拣中心" />
-          <el-option label="杭州分拣中心" value="杭州分拣中心" />
-          <el-option label="南京分拣中心" value="南京分拣中心" />
-          <el-option label="南昌分拣中心" value="南昌分拣中心" />
+          <el-option label="上海分拣中心" value="Shanghai" />
+          <el-option label="合肥分拣中心" value="Hefei" />
+          <el-option label="杭州分拣中心" value="Hangzhou" />
+          <el-option label="南京分拣中心" value="Nanjing" />
+          <el-option label="南昌分拣中心" value="Nanchang" />
         </el-select>
 
         <el-select v-model="endWarehouseFilter" placeholder="终点仓库" clearable class="filter-item">
-          <el-option label="上海分拣中心" value="上海分拣中心" />
-          <el-option label="合肥分拣中心" value="合肥分拣中心" />
-          <el-option label="杭州分拣中心" value="杭州分拣中心" />
-          <el-option label="南京分拣中心" value="南京分拣中心" />
-          <el-option label="南昌分拣中心" value="南昌分拣中心" />
+          <el-option label="上海分拣中心" value="Shanghai" />
+          <el-option label="合肥分拣中心" value="Hefei" />
+          <el-option label="杭州分拣中心" value="Hangzhou" />
+          <el-option label="南京分拣中心" value="Nanjing" />
+          <el-option label="南昌分拣中心" value="Nanchang" />
         </el-select>
-        </el-table>
+
       </div>
     </el-card>
 
     <el-card class="content-card">
-      <el-table :data="waybillList" border>
+      <el-table :data="filteredWaybills" border>
         <el-table-column prop="waybillId" label="运单号" width="180" />
         <el-table-column prop="routeId" label="线路ID" width="180" />
         <el-table-column prop="orderNumber" label="关联订单" width="180" />

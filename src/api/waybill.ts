@@ -4,7 +4,7 @@ import type { Waybill } from '@/types/waybill.ts'
 // 获取全部运单
 export function getAllWaybills() {
   return request<Waybill[]>({
-    url: 'http://localhost:9082/waybill/allWaybills',
+    url: 'http://100.76.102.33:9082/waybill/allWaybills',
     method: "get"
   })
 }
