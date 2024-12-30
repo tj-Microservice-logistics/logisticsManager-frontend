@@ -20,6 +20,7 @@
       </div>
 
       <div class="filter-container">
+        <el-table :data="filteredWaybills" border>
         <el-input
             v-model="searchQuery"
             placeholder="运单号/订单号"
@@ -36,6 +37,37 @@
           <el-option label="运输中" value="in_transit" />
           <el-option label="已送达" value="delivered" />
         </el-select>
+
+        <el-input
+            v-model="driverNameFilter"
+            placeholder="司机姓名"
+            class="filter-item"
+            clearable
+        ></el-input>
+
+        <el-input
+            v-model="vehiclePlateNumberFilter"
+            placeholder="车牌号"
+            class="filter-item"
+            clearable
+        ></el-input>
+
+        <el-select v-model="startWarehouseFilter" placeholder="起点仓库" clearable class="filter-item">
+          <el-option label="上海分拣中心" value="上海分拣中心" />
+          <el-option label="合肥分拣中心" value="合肥分拣中心" />
+          <el-option label="杭州分拣中心" value="杭州分拣中心" />
+          <el-option label="南京分拣中心" value="南京分拣中心" />
+          <el-option label="南昌分拣中心" value="南昌分拣中心" />
+        </el-select>
+
+        <el-select v-model="endWarehouseFilter" placeholder="终点仓库" clearable class="filter-item">
+          <el-option label="上海分拣中心" value="上海分拣中心" />
+          <el-option label="合肥分拣中心" value="合肥分拣中心" />
+          <el-option label="杭州分拣中心" value="杭州分拣中心" />
+          <el-option label="南京分拣中心" value="南京分拣中心" />
+          <el-option label="南昌分拣中心" value="南昌分拣中心" />
+        </el-select>
+        </el-table>
       </div>
     </el-card>
 
@@ -71,17 +103,57 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { Tickets, Search } from '@element-plus/icons-vue';
 import { waybillAPI } from '@/api/waybill';
 import { Waybill } from '@/types/waybill';
 
-
+declare var BMap: any;
+const currentPage = ref(1);  // 当前页，默认为第 1 页
+const pageSize = ref(10);  // 每页显示条数，默认为 10
 const loading = ref(false);  // 定义 loading 变量
 const total = ref(0);  // 运单总数
 const waybillList = ref<Waybill[]>([]);
 
 let map: BMap.Map | null = null; // 地图实例
+const searchQuery = ref('');
+const statusFilter = ref(null);
+const driverNameFilter = ref('');
+const vehiclePlateNumberFilter = ref('');
+const startWarehouseFilter = ref('');
+const endWarehouseFilter = ref('');
+
+const filteredWaybills = computed(() => {
+  return waybillList.value.filter((waybill) => {
+    const matchesQuery =
+        searchQuery.value === '' ||
+        (waybill.waybillId?.toString().includes(searchQuery.value) ||
+            waybill.orderNumber?.includes(searchQuery.value));
+    const matchesStatus =
+        !statusFilter.value || waybill.transportStatus === statusFilter.value;
+    const matchesDriver =
+        !driverNameFilter.value ||
+        waybill.driverName?.includes(driverNameFilter.value);
+    const matchesPlateNumber =
+        !vehiclePlateNumberFilter.value ||
+        waybill.vehiclePlateNumber?.includes(vehiclePlateNumberFilter.value);
+    const matchesStartWarehouse =
+        !startWarehouseFilter.value ||
+        waybill.startWarehouseName === startWarehouseFilter.value;
+    const matchesEndWarehouse =
+        !endWarehouseFilter.value ||
+        waybill.endWarehouseName === endWarehouseFilter.value;
+
+    return (
+        matchesQuery &&
+        matchesStatus &&
+        matchesDriver &&
+        matchesPlateNumber &&
+        matchesStartWarehouse &&
+        matchesEndWarehouse
+    );
+  });
+});
 
 
 // 初始化地图
@@ -128,25 +200,6 @@ const fetchWaybills = async () => {
   } finally {
     loading.value = false;
   }
-};
-
-// 状态相关
-const getStatusType = (status: string) => {
-  const statusMap: Record<string, string> = {
-    pending: 'warning',
-    in_transit: 'primary',
-    delivered: 'success',
-  };
-  return statusMap[status] || 'info';
-};
-
-const getStatusLabel = (status: string) => {
-  const statusMap: Record<string, string> = {
-    pending: '待发车',
-    in_transit: '运输中',
-    delivered: '已送达',
-  };
-  return statusMap[status] || status;
 };
 
 // 页码变化
