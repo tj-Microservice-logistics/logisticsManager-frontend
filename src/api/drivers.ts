@@ -30,7 +30,7 @@ export function addDriver(data: {
   isAvailable: boolean
 }): Promise<AxiosResponse<Driver>> {
   return request({
-    url: '/drivers',
+    url: 'http://100.76.102.33:9081/drivers',
     method: 'post',
     data
   })
@@ -45,7 +45,7 @@ export function updateDriver(driverId: number, data: {
   isAvailable: boolean
 }): Promise<AxiosResponse<Driver>> {
   return request({
-    url: `/drivers/${driverId}`,
+    url: `http://100.76.102.33:9081/drivers/${driverId}`,
     method: 'put',
     data
   })
@@ -54,7 +54,7 @@ export function updateDriver(driverId: number, data: {
 // 删除司机
 export function deleteDriver(driverId: number): Promise<AxiosResponse<void>> {
   return request({
-    url: `/drivers/${driverId}`,
+    url: `http://100.76.102.33:9081/drivers/${driverId}`,
     method: 'delete'
   })
 }
