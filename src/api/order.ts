@@ -4,7 +4,7 @@ import type { OrderQuery } from '@/types/order'
 // 获取订单列表
 export function getOrderList(params: OrderQuery) {
   return request({
-    url: 'http://localhost:9080/order/list',
+    url: 'http://100.76.102.33:9080/order/list',
     method: 'get',
     params
   })
@@ -13,7 +13,7 @@ export function getOrderList(params: OrderQuery) {
 // 创建订单
 export function createOrder(data: any) {
   return request({
-    url: 'http://localhost:9080/order/create',
+    url: 'http://100.76.102.33:9080/order/create',
     method: 'post',
     data
   })
@@ -22,7 +22,7 @@ export function createOrder(data: any) {
 // 更新支付状态
 export function updatePaymentCompleted(orderId: number) {
   return request({
-    url: `http://localhost:9080/order/update-payment-completed`,
+    url: `http://100.76.102.33:9080/order/update-payment-completed`,
     method: 'post',
     params: { orderId }
   })

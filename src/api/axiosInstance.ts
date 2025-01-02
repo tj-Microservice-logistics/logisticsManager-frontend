@@ -2,7 +2,7 @@ import axios from "axios";
 
 // 创建 Axios 实例
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:9083", // 后端 API 基础 URL
+  baseURL: "http://100.76.102.33:9083", // 后端 API 基础 URL
   timeout: 5000, // 请求超时时间
   withCredentials: true, // 允许跨域携带 Cookie
 });

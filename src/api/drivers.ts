@@ -15,7 +15,7 @@ export interface Driver {
 // 获取司机列表
 export function getDrivers(params: { page: number; size: number }) {
   return request({
-    url: '/drivers',
+    url: 'http://100.76.102.33:9081/drivers',
     method: 'get',
     params,
   });
@@ -25,12 +25,11 @@ export function getDrivers(params: { page: number; size: number }) {
 export function addDriver(data: {
   fullName: string
   contactNumber: string
-  assignedVehicle?: number | null
-  warehouseId?: number | null
+  warehouseId?: number
   isAvailable: boolean
 }): Promise<AxiosResponse<Driver>> {
   return request({
-    url: '/drivers',
+    url: 'http://100.76.102.33:9081/drivers',
     method: 'post',
     data
   })
@@ -40,12 +39,11 @@ export function addDriver(data: {
 export function updateDriver(driverId: number, data: {
   fullName: string
   contactNumber: string
-  assignedVehicle?: number | null
-  warehouseId?: number | null
+  warehouseId?: number
   isAvailable: boolean
 }): Promise<AxiosResponse<Driver>> {
   return request({
-    url: `/drivers/${driverId}`,
+    url: `http://100.76.102.33:9081/drivers/${driverId}`,
     method: 'put',
     data
   })
@@ -54,7 +52,7 @@ export function updateDriver(driverId: number, data: {
 // 删除司机
 export function deleteDriver(driverId: number): Promise<AxiosResponse<void>> {
   return request({
-    url: `/drivers/${driverId}`,
+    url: `http://100.76.102.33:9081/drivers/${driverId}`,
     method: 'delete'
   })
 }

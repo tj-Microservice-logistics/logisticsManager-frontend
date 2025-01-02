@@ -1,19 +1,14 @@
 <template>
   <div class="vehicles-container">
     <el-card class="menu-card">
-      <el-menu
-        mode="horizontal"
-        :default-active="activeMenu"
-        router
-      >
+      <el-menu mode="horizontal" :default-active="activeMenu" router>
         <el-menu-item index="/vehicles/list">
-          <el-icon><List /></el-icon>
+          <el-icon>
+            <List />
+          </el-icon>
           <span>车辆列表</span>
         </el-menu-item>
-        <el-menu-item index="/vehicles/return">
-          <el-icon><Calendar /></el-icon>
-          <span>回车登记</span>
-        </el-menu-item>
+
       </el-menu>
     </el-card>
 
@@ -43,7 +38,7 @@ const activeMenu = computed(() => route.path)
       .el-menu-item {
         height: 50px;
         line-height: 50px;
-        
+
         .el-icon {
           margin-right: 8px;
         }

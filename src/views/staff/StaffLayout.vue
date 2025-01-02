@@ -1,18 +1,12 @@
 <template>
   <div class="staff-container">
     <el-card class="menu-card">
-      <el-menu
-        mode="horizontal"
-        :default-active="activeMenu"
-        router
-      >
+      <el-menu mode="horizontal" :default-active="activeMenu" router>
         <el-menu-item index="/staff/drivers">
-          <el-icon><User /></el-icon>
+          <el-icon>
+            <User />
+          </el-icon>
           <span>司机管理</span>
-        </el-menu-item>
-        <el-menu-item index="/staff/schedule">
-          <el-icon><Clock /></el-icon>
-          <span>排班管理</span>
         </el-menu-item>
       </el-menu>
     </el-card>
@@ -50,4 +44,4 @@ const activeMenu = computed(() => route.path)
     }
   }
 }
-</style> 
+</style>
