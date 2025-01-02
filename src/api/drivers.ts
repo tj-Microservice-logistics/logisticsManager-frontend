@@ -25,8 +25,7 @@ export function getDrivers(params: { page: number; size: number }) {
 export function addDriver(data: {
   fullName: string
   contactNumber: string
-  assignedVehicle?: number | null
-  warehouseId?: number | null
+  warehouseId?: number
   isAvailable: boolean
 }): Promise<AxiosResponse<Driver>> {
   return request({
@@ -40,8 +39,7 @@ export function addDriver(data: {
 export function updateDriver(driverId: number, data: {
   fullName: string
   contactNumber: string
-  assignedVehicle?: number | null
-  warehouseId?: number | null
+  warehouseId?: number
   isAvailable: boolean
 }): Promise<AxiosResponse<Driver>> {
   return request({

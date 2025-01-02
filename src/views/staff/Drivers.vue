@@ -79,9 +79,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Search, Plus } from '@element-plus/icons-vue';
 import { getDrivers, addDriver, updateDriver, deleteDriver } from '@/api/drivers';
-import { getVehicles } from '@/api/vehicles';
 import { getWarehouses } from '@/api/warehouses';
-import axios from 'axios';
 
 // 状态变量
 const driverList = ref([]);
@@ -170,22 +168,18 @@ const openEditDialog = (driver: any) => {
 // 提交表单
 const handleSubmit = async () => {
   try {
-    // 如果是新增司机，直接提交表单数据，不需要考虑 driverId
+    // 准备提交的数据
+    const driverData = {
+      fullName: formData.value.fullName,
+      contactNumber: formData.value.contactNumber,
+      warehouseId: formData.value.warehouseId,
+      isAvailable: formData.value.available, // 修改字段名以匹配接口定义
+    };
+    console.log(driverData);
+    // 判断是新增还是更新
     const response = formData.value.driverId
-        ? await axios.put(`http://100.76.102.33:9081/drivers/${formData.value.driverId}`, {
-          fullName: formData.value.fullName,
-          contactNumber: formData.value.contactNumber,
-          warehouseId: formData.value.warehouseId,
-          available: formData.value.available,
-          assignedVehicle: formData.value.assignedVehicle,
-        })
-        : await axios.post("http://100.76.102.33:9081/drivers", {
-          fullName: formData.value.fullName,
-          contactNumber: formData.value.contactNumber,
-          warehouseId: formData.value.warehouseId,
-          available: formData.value.available,
-          assignedVehicle: formData.value.assignedVehicle,
-        });
+        ? await updateDriver(formData.value.driverId, driverData)
+        : await addDriver(driverData);
 
     ElMessage.success("司机信息保存成功");
     fetchDrivers(); // 更新司机列表
