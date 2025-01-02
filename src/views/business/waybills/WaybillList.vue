@@ -70,9 +70,8 @@
     </el-card>
 
     <el-card class="content-card">
-      <el-table :data="filteredWaybills" border>
+      <el-table :data="pagedWaybills" border>
         <el-table-column prop="waybillId" label="运单号" width="180" />
-        <el-table-column prop="routeId" label="线路ID" width="180" />
         <el-table-column prop="orderNumber" label="关联订单" width="180" />
         <el-table-column prop="vehiclePlateNumber" label="车牌号" width="120" />
         <el-table-column prop="driverName" label="司机" width="120" />
@@ -89,7 +88,7 @@
         <el-pagination
             v-model:current-page="currentPage"
             v-model:page-size="pageSize"
-            :total="total"
+            :total="filteredWaybills.length"
             :page-sizes="[10, 20, 50, 100]"
             layout="total, sizes, prev, pager, next"
             @size-change="handleSizeChange"
@@ -153,7 +152,11 @@ const filteredWaybills = computed(() => {
   });
 });
 
-
+const pagedWaybills = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return filteredWaybills.value.slice(start, end);
+});
 // 初始化地图
 const initMap = () => {
   if (typeof BMap !== 'undefined') {
@@ -161,6 +164,7 @@ const initMap = () => {
     map.centerAndZoom(new BMap.Point(121.4737, 31.2304), 10); // 默认显示上海
     map.enableScrollWheelZoom(true); // 启用滚轮缩放
   } else {
+
     console.error('BMap 未加载，请检查 API 是否正确引入！');
   }
 };

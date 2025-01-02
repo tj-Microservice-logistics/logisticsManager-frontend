@@ -135,6 +135,11 @@
         <el-table-column prop="goods.goodsLength" label="长度(cm)" sortable />
         <el-table-column prop="goods.goodsWidth" label="宽度(cm)" sortable />
         <el-table-column prop="goods.goodsHeight" label="高度(cm)" sortable />
+        <el-table-column label="路径追踪">
+          <template #default="{ row }">
+            <el-button type="text" @click="openRouteDialog(row.orderNumber)">追踪</el-button>
+          </template>
+        </el-table-column>
         <el-table-column prop="paymentCompleted" label="支付状态"
           :filters="[
             { text: '已支付', value: true },
@@ -164,6 +169,39 @@
           </template>
         </el-table-column>
       </el-table>
+      <el-dialog v-model="routeDialogVisible" title="订单路径追踪" width="70%">
+        <div class="route-tracking">
+          <div class="tracking-line">
+            <div
+                v-for="(warehouse, index) in routeWarehouses"
+                :key="warehouse.warehouseId"
+                class="tracking-point-wrapper"
+                :style="{ left: `${index * (100 / (routeWarehouses.length - 1))}%` }"
+            >
+              <div
+                  class="tracking-point"
+                  :class="{ 'arrived': warehouse.arrival||(warehouse.sequence==1), 'not-arrived': !warehouse.arrival && (warehouse.sequence!=1) }"
+              ></div>
+            </div>
+          </div>
+          <div class="tracking-label-line">
+            <div
+                v-for="(warehouse, index) in routeWarehouses"
+                :key="warehouse.warehouseId"
+                class="tracking-label-wrapper"
+                :style="{ left: `${index * (100 / 13 / (routeWarehouses.length - 1))}%` }"
+            >
+              <div class="tracking-label">
+                <div class="warehouse-en">{{ warehouse.warehouseName }}</div>
+                <div class="warehouse-cn">{{ getWarehouseChineseName(warehouse.warehouseName) }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <template #footer>
+          <el-button @click="routeDialogVisible = false">关闭</el-button>
+        </template>
+      </el-dialog>
     </el-card>
   </div>
 </template>
@@ -173,6 +211,8 @@ import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { orderAPI } from '@/api/order'
 import type { Order } from '@/types/order'
+import { getRouteWarehouses } from "@/api/routeWarehouses"
+import {getWarehouse} from "@/api/warehouses";
 
 const loading = ref(false)
 const orderList = ref<Order[]>([])
@@ -188,6 +228,57 @@ const orderForm = ref({
   goodsWidth: undefined,
   goodsHeight: undefined
 })
+const routeDialogVisible = ref(false); // 控制路径追踪弹窗
+const routeWarehouses = ref<any[]>([]); // 存储路径数据
+
+// 打开路径追踪对话框并获取路径数据
+const warehouseMapping = [
+  { label: "上海分拣中心", value: "Shanghai" },
+  { label: "合肥分拣中心", value: "Hefei" },
+  { label: "杭州分拣中心", value: "Hangzhou" },
+  { label: "南京分拣中心", value: "Nanjing" },
+  { label: "南昌分拣中心", value: "Nanchang" }
+];
+
+const getWarehouseChineseName = (englishName) => {
+  const mapping = warehouseMapping.find((item) => item.value === englishName);
+  return mapping ? mapping.label : '未知仓库';
+};
+const openRouteDialog = async (orderNumber: string) => {
+  try {
+    // 获取所有仓库的基本信息
+    const response = await getRouteWarehouses(orderNumber);
+    routeWarehouses.value = response;
+
+    // 使用 Promise.all 获取每个仓库的详细信息
+    const detailedWarehouses = await Promise.all(
+        response.map(async (warehouse: { warehouseId: string }) => {
+          try {
+            const warehouseDetails = await getWarehouse(warehouse.warehouseId);
+            return {
+              ...warehouse,
+              warehouseName: warehouseDetails.warehouseName, // 假设返回数据中包含 name 属性
+            };
+          } catch (error) {
+            console.error(`获取仓库 ${warehouse.warehouseId} 信息失败`, error);
+            return {
+              ...warehouse,
+              warehouseName: '未知', // 处理异常情况
+            };
+          }
+        })
+    );
+
+    // 更新展示数据
+    routeWarehouses.value = detailedWarehouses;
+    routeDialogVisible.value = true;
+    console.log(detailedWarehouses);
+  } catch (error) {
+    ElMessage.error('请求路径信息失败');
+    console.error(error);
+  }
+};
+
 
 const paymentDialogVisible = ref(false)
 const selectedOrders = ref<any[]>([])
@@ -357,12 +448,92 @@ onMounted(() => {
       justify-content: space-between;
       align-items: center;
       margin-bottom: 20px;
-      
+
       .header-buttons {
         display: flex;
         gap: 10px;
       }
     }
   }
+}
+.warehouse-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.warehouse-tag {
+  font-size: 14px;
+  padding: 5px;
+  border-radius: 20px;
+}
+.route-tracking {
+  display: flex;
+  flex-direction: column; /* Stacks lines and labels vertically */
+  align-items: center;
+  position: relative;
+  width: 100%;
+  height: 150px; /* Adjusted height to fit lines and labels */
+}
+
+.tracking-line {
+  position: relative;
+  width: 85%;
+  height: 12px; /* Line thickness */
+  background-color: #f0f0f0;
+  margin-bottom: 20px; /* Space between line and labels */
+}
+
+.tracking-point-wrapper {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.tracking-point {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  background-color: #fff;
+}
+
+.tracking-point.arrived {
+  background-color: #67c23a;
+  border-color: #67c23a;
+}
+
+.tracking-point.not-arrived {
+  background-color: #dcdfe6;
+  border-color: #dcdfe6;
+}
+
+.tracking-label-line {
+  position: relative;
+  width: 85%;
+  height: 12px;
+  display: flex;
+  margin-bottom: 20px;
+  justify-content: space-between;
+}
+
+.tracking-label-wrapper {
+  position: relative;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
+.tracking-label {
+  text-align: center;
+}
+
+.warehouse-en {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.warehouse-cn {
+  font-size: 12px;
+  color: #606266;
 }
 </style> 

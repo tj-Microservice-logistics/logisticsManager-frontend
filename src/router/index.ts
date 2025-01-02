@@ -33,12 +33,6 @@ const routes: RouteRecordRaw[] = [
             component: () => import('@/views/vehicles/VehicleList.vue'),
             meta: { title: '车辆列表' }
           },
-          {
-            path: 'return',
-            name: 'VehicleReturn',
-            component: () => import('@/views/vehicles/VehicleReturn.vue'),
-            meta: { title: '回车登记' }
-          }
         ]
       },
       {
@@ -54,12 +48,6 @@ const routes: RouteRecordRaw[] = [
             component: () => import('@/views/staff/Drivers.vue'),
             meta: { title: '司机管理' }
           },
-          {
-            path: 'schedule',
-            name: 'Schedule',
-            component: () => import('@/views/staff/Schedule.vue'),
-            meta: { title: '排班管理' }
-          }
         ]
       },
       {
